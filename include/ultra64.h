@@ -30,4 +30,10 @@
 #include <PR/libaudio.h>
 #include <PR/libultra.h>
 
+#ifdef __MINGW32__
+#include <string.h>
+#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
+#define bcopy(s1, s2, n) memmove((s2), (s1), (n))
+#endif
+
 #endif

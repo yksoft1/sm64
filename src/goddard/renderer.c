@@ -25,9 +25,15 @@
 #define MAX_GD_DLS 1000
 #define OS_MESG_SI_COMPLETE 0x33333333
 
+#ifdef TARGET_N64
 #define GD_VIRTUAL_TO_PHYSICAL(addr) ((uintptr_t)(addr) &0x0FFFFFFF)
 #define GD_LOWER_24(addr) ((uintptr_t)(addr) &0x00FFFFFF)
 #define GD_LOWER_29(addr) (((uintptr_t)(addr)) & 0x1FFFFFFF)
+#else
+#define GD_VIRTUAL_TO_PHYSICAL(addr) (addr)
+#define GD_LOWER_24(addr) ((uintptr_t)(addr))
+#define GD_LOWER_29(addr) (((uintptr_t)(addr)))
+#endif
 
 #define MTX_INTPART_PACK(w1, w2) (((w1) &0xFFFF0000) | (((w2) >> 16) & 0xFFFF))
 #define MTX_FRACPART_PACK(w1, w2) ((((w1) << 16) & 0xFFFF0000) | ((w2) &0xFFFF))
@@ -1683,6 +1689,7 @@ u32 Unknown8019EC88(Gfx *dl, UNUSED s32 arg1) {
 
 /* 24D4C4 -> 24D63C; orig name: func_8019ECF4 */
 void mat4_to_mtx(const Mat4f *src, Mtx *dst) {
+#ifdef TARGET_N64
     s32 i; // 14
     s32 j; // 10
     s32 w1;
@@ -1700,6 +1707,9 @@ void mat4_to_mtx(const Mat4f *src, Mtx *dst) {
             mtxFrc++;
         }
     }
+#else
+    guMtxF2L(src, dst);
+#endif
 }
 
 /* 24D63C -> 24D6E4; orig name: func_8019EE6C */
@@ -3632,6 +3642,7 @@ void gd_block_dma(u32 devAddr, void *vAddr, s32 size) {
     } while (size > 0);
 }
 
+#ifdef TARGET_N64
 /* 255704 -> 255988 */
 struct GdObj *load_dynlist(struct DynList *dynlist) {
     u32 segSize;               // 4c
@@ -3692,6 +3703,11 @@ struct GdObj *load_dynlist(struct DynList *dynlist) {
 
     return loadedList;
 }
+#else
+struct GdObj *load_dynlist(struct DynList *dynlist) {
+    return proc_dynlist(dynlist);
+}
+#endif
 
 /* 255988 -> 25599C */
 void stub_801A71B8(UNUSED u32 a0) {

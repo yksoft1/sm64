@@ -1,6 +1,7 @@
 #include <ultra64.h>
 
 #include "sm64.h"
+#include "gfx_dimensions.h"
 #include "memory.h"
 #include "types.h"
 #include "audio/external.h"
@@ -196,7 +197,7 @@ void create_dl_ortho_matrix(void) {
     guOrtho(matrix, 0.0f, SCREEN_WIDTH, 0.0f, SCREEN_HEIGHT, -10.0f, 10.0f, 1.0f);
 
     // Should produce G_RDPHALF_1 in Fast3D
-    gSPPerspNormalize(gDisplayListHead++, 0xFFFF);
+    gSPPerspNormalize((Gfx *) gDisplayListHead++, 0xFFFF);
 
     gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(matrix), G_MTX_PROJECTION | G_MTX_MUL | G_MTX_NOPUSH)
 }
@@ -1793,13 +1794,26 @@ void render_dialog_entries(void) {
 
     render_dialog_box_type(dialog, dialog->linesPerBox);
 
-    gDPSetScissor(gDisplayListHead++, G_SC_NON_INTERLACE, ensure_nonnegative(dialog->leftOffset),
+    gDPSetScissor(gDisplayListHead++, G_SC_NON_INTERLACE, 
+#ifdef TARGET_N64
+                   ensure_nonnegative(dialog->leftOffset),
+#else
+                   0,
+#endif
                   ensure_nonnegative(DIAG_VAL2 - dialog->width),
 #ifdef VERSION_EU
+#ifdef TARGET_N64
                   ensure_nonnegative(dialog->leftOffset + DIAG_VAL3 / gDialogBoxScale),
+#else
+                  SCREEN_WIDTH,
+#endif
                   ensure_nonnegative((240 - dialog->width) + ((dialog->linesPerBox * 80) / DIAG_VAL4) / gDialogBoxScale));
 #else
+#ifdef TARGET_N64
                   ensure_nonnegative(DIAG_VAL3 + dialog->leftOffset),
+#else
+                  SCREEN_WIDTH,
+#endif
                   ensure_nonnegative(240 + ((dialog->linesPerBox * 80) / DIAG_VAL4) - dialog->width));
 #endif
 #if defined(VERSION_JP) || defined(VERSION_SH)
@@ -2108,8 +2122,17 @@ void change_dialog_camera_angle(void) {
 }
 
 void shade_screen(void) {
-    create_dl_translation_matrix(MENU_MTX_PUSH, 0, 240.0f, 0);
+    create_dl_translation_matrix(MENU_MTX_PUSH, GFX_DIMENSIONS_FROM_LEFT_EDGE(0), 240.0f, 0);
+
+    // This is a bit weird. It reuses the dialog text box (width 130, height -80),
+    // so scale to at least fit the screen.
+#ifdef TARGET_N64
     create_dl_scale_matrix(MENU_MTX_NOPUSH, 2.6f, 3.4f, 1.0f);
+#else
+    create_dl_scale_matrix(MENU_MTX_NOPUSH,
+                           GFX_DIMENSIONS_ASPECT_RATIO * SCREEN_HEIGHT / 130.0f, 3.0f, 1.0f);
+#endif
+
     gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, 110);
     gSPDisplayList(gDisplayListHead++, dl_draw_text_bg_box);
     gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);

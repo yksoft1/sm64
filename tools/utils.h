@@ -7,7 +7,12 @@
 
 // printing size_t varies by compiler
 #if defined(_MSC_VER) || defined(__MINGW32__)
-  #define SIZE_T_FORMAT "%Iu"
+#include <windows.h>
+#define SIZE_T_FORMAT "%Iu"
+#define realpath(N,R) _fullpath((R),(N),MAX_PATH)
+#ifndef PATH_MAX
+#define PATH_MAX MAX_PATH
+#endif
 #else
   #define SIZE_T_FORMAT "%zu"
 #endif

@@ -37,6 +37,12 @@ typedef s32 intptr_t;
 typedef s32 ptrdiff_t;
 #else
 #include <stddef.h>
+#include <stdint.h>
+#ifndef __MINGW32__
+typedef ptrdiff_t ssize_t;
+#else
+typedef long ssize_t;
+#endif
 #endif
 
 #endif
